@@ -11,7 +11,7 @@ import net.minecraft.text.Text;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
-public class AutoElytraCommands {
+public class ChatCommands {
 
     /*
      *
@@ -22,10 +22,11 @@ public class AutoElytraCommands {
      * /fly pause
      * /fly resume
      *
-     * /fly dictionary
-     * /fly dictionary add <x> <y> <name>
-     * /fly dictionary remove <name>
+     * /fly waypoints
+     * /fly waypoints add <x> <y> <name>
+     * /fly waypoints remove <name>
      *
+     * /fly sequence
      * /fly sequence add <x> <y>
      * /fly sequence add <name>
      * /fly sequence load <filename>
@@ -39,7 +40,7 @@ public class AutoElytraCommands {
      */
 
     public static void initCommands() {
-        AutoElytra.LOGGER.info("Initializing commands!");
+        Utils.LOGGER.info("Initializing commands!");
 
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
 
@@ -48,34 +49,47 @@ public class AutoElytraCommands {
                     .then(argument("x", IntegerArgumentType.integer())
                         .then(argument("z", IntegerArgumentType.integer())
                             .executes(context -> {
+                                int x = context.getArgument("x", Integer.class);
+                                int z = context.getArgument("z", Integer.class);
+                                // TODO
                                 return 1;
                             })
                         )
                     ).then(argument("name", StringArgumentType.string())
                         .executes(context -> {
+                            String name = context.getArgument("name", String.class);
+                            // TODO
                             return 1;
                         })
                     )
                 ).then(literal("stop")
                     .executes(context -> {
+                        // TODO
                         return 1;
                     })
                 ).then(literal("pause")
                     .executes(context -> {
+                        // TODO
                         return 1;
                     })
                 ).then(literal("resume")
                     .executes(context -> {
+                        // TODO
                         return 1;
                     })
-                ).then(literal("dictionary")
+                ).then(literal("waypoints")
                     .executes(context -> {
+                        WaypointLibrary.getInstance().listWaypoints();
                         return 1;
                     }).then(literal("add")
                         .then(argument("x", IntegerArgumentType.integer())
                             .then(argument("z", IntegerArgumentType.integer())
                                 .then(argument("name", StringArgumentType.string())
                                     .executes(context -> {
+                                        int x = context.getArgument("x", Integer.class);
+                                        int z = context.getArgument("z", Integer.class);
+                                        String name = context.getArgument("name", String.class);
+                                        WaypointLibrary.getInstance().addWaypoint(new Waypoint(x, z, name));
                                         return 1;
                                     })
                                 )
@@ -84,35 +98,49 @@ public class AutoElytraCommands {
                     ).then(literal("remove")
                         .then(argument("name", StringArgumentType.string())
                             .executes(context -> {
+                                String name = context.getArgument("name", String.class);
+                                WaypointLibrary.getInstance().removeWaypoint(name);
                                 return 1;
                             })
                         )
                     )
                 ).then(literal("sequence")
-                    .then(literal("add")
+                    .executes(context -> {
+                        Sequencer.getInstance().listWaypoints();
+                        return 1;
+                    }).then(literal("add")
                         .then(argument("x", IntegerArgumentType.integer())
                             .then(argument("z", IntegerArgumentType.integer())
                                 .executes(context -> {
+                                    int x = context.getArgument("x", Integer.class);
+                                    int z = context.getArgument("z", Integer.class);
+                                    Sequencer.getInstance().addWaypoint(new Waypoint(x, z));
                                     return 1;
                                 })
                             )
                         ).then(argument("name", StringArgumentType.string())
                             .executes(context -> {
+                                String name = context.getArgument("name", String.class);
+                                Sequencer.getInstance().addWaypoint(name);
                                 return 1;
                             })
                         )
                     ).then(literal("load")
                         .then(argument("filename", StringArgumentType.string())
                             .executes(context -> {
+                                String filename = context.getArgument("filename", String.class);
+                                Sequencer.getInstance().loadSequence(filename);
                                 return 1;
                             })
                         )
                     ).then(literal("clear")
                         .executes(context -> {
+                            Sequencer.getInstance().clearSequence();
                             return 1;
                         })
                     ).then(literal("start")
                         .executes(context -> {
+                            // TODO
                             return 1;
                         })
                     )
@@ -121,16 +149,19 @@ public class AutoElytraCommands {
                         .then(literal("never")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Landing mode: NEVER"));
+                                // TODO
                                 return 1;
                             })
                         ).then(literal("always")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Landing mode: ALWAYS"));
+                                // TODO
                                 return 1;
                             })
                         ).then(literal("last")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Landing mode: LAST"));
+                                // TODO
                                 return 1;
                             })
                         )
@@ -138,16 +169,19 @@ public class AutoElytraCommands {
                         .then(literal("never")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Disconnect mode: NEVER"));
+                                // TODO
                                 return 1;
                             })
                         ).then(literal("always")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Disconnect mode: ALWAYS"));
+                                // TODO
                                 return 1;
                             })
                         ).then(literal("last")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Disconnect mode: LAST"));
+                                // TODO
                                 return 1;
                             })
                         )
@@ -155,11 +189,13 @@ public class AutoElytraCommands {
                         .then(literal("nearest")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Fly order: NEAREST"));
+                                // TODO
                                 return 1;
                             })
                         ).then(literal("iterative")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Fly order: ITERATIVE"));
+                                // TODO
                                 return 1;
                             })
                         )
@@ -170,7 +206,7 @@ public class AutoElytraCommands {
         });
     }
 
-    private static void sendPrivateMessage(Text message) {
+    public static void sendPrivateMessage(Text message) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player != null)
             mc.inGameHud.addChatMessage(MessageType.SYSTEM, message, mc.player.getUuid());

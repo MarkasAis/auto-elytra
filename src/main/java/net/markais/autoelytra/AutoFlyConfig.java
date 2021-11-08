@@ -1,10 +1,15 @@
 package net.markais.autoelytra;
 
-public class AutoFlyConfig extends PersistentResource {
-    private static final String DEFAULT_FILE_PATH = "auto_fly_config.json";
-    private static AutoFlyConfig instance;
+enum InteractionMode {
+    NEVER, ALWAYS, LAST
+};
 
-    protected int test = 10;
+public class AutoFlyConfig extends PersistentResource {
+    private transient static final String DEFAULT_FILE_PATH = "auto_fly_config.json";
+    private transient static AutoFlyConfig instance;
+
+    private InteractionMode landingMode = InteractionMode.LAST;
+    private InteractionMode disconnectMode = InteractionMode.NEVER;
 
     public static AutoFlyConfig getInstance() {
         if (instance == null)
@@ -13,12 +18,21 @@ public class AutoFlyConfig extends PersistentResource {
         return instance;
     }
 
-    public int getTest() {
-        return test;
+    public InteractionMode getLandingMode() {
+        return landingMode;
     }
 
-    public void setTest(int test) {
-        this.test = test;
+    public void setLandingMode(InteractionMode mode) {
+        this.landingMode = mode;
+        save();
+    }
+
+    public InteractionMode getDisconnectMode() {
+        return disconnectMode;
+    }
+
+    public void setDisconnectMode(InteractionMode mode) {
+        this.disconnectMode = mode;
         save();
     }
 }

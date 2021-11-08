@@ -8,16 +8,16 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 
 public class AutoElytra implements ModInitializer {
-	public static final Logger LOGGER = LogManager.getLogger("AutoElytra");
+
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Initializing AutoElytra!");
+		Utils.LOGGER.info("Initializing AutoElytra!");
 		ClientTickEvents.END_CLIENT_TICK.register(e -> { onTick(); });
-		AutoElytraCommands.initCommands();
+		ChatCommands.initCommands();
 
-		LOGGER.info(AutoFlyConfig.getInstance().getTest());
-		AutoFlyConfig.getInstance().setTest(1337);
+		Utils.LOGGER.info(AutoFlyConfig.getInstance().getLandingMode());
+		AutoFlyConfig.getInstance().setLandingMode(InteractionMode.NEVER);
 
 //		AutoElytraConfig config = AutoElytraConfig.load();
 //
