@@ -2,6 +2,8 @@ package net.markais.autoelytra;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.impl.networking.client.ClientNetworkingImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -9,31 +11,32 @@ import java.io.IOException;
 
 public class AutoElytra implements ModInitializer {
 
+	private boolean isConnected = false;
 
 	@Override
 	public void onInitialize() {
-		Utils.LOGGER.info("Initializing AutoElytra!");
-		ClientTickEvents.END_CLIENT_TICK.register(e -> { onTick(); });
+		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> { onConnect(); });
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> { onDisconnect(); });
+		ClientTickEvents.END_CLIENT_TICK.register(e -> { onUpdate(); });
 		ChatCommands.initCommands();
-
-		Utils.LOGGER.info(AutoFlyConfig.getInstance().getLandingMode());
-		AutoFlyConfig.getInstance().setLandingMode(InteractionMode.NEVER);
-
-//		AutoElytraConfig config = AutoElytraConfig.load();
-//
-//		LOGGER.info(config.number);
-//
-//		config.number = 69;
-//
-//		try {
-//			config.save();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+		Utils.LOGGER.info("AutoElytra initialized!");
 	}
 
-	private static void onTick() {
+	private void onConnect() {
+		PlayerController.connect();
+		isConnected = true;
+		Utils.LOGGER.info("Connected");
+	}
 
+	private void onDisconnect() {
+		isConnected = false;
+		Utils.LOGGER.info("Disconnected");
+	}
+
+	private void onUpdate() {
+		if (!isConnected) return;
+		PlayerController.update();
+		FlyManager.getInstance().update();
 	}
 
 }

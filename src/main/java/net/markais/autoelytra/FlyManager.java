@@ -7,23 +7,31 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Sequencer extends PersistentResource {
+public class FlyManager extends PersistentResource {
     private transient static final String DEFAULT_FILE_PATH = "sequencer.json";
-    private transient static Sequencer instance;
+    private transient static FlyManager instance;
 
+    private StateMachine stateMachine = new StateMachine(FlyState.IDLE);
+
+    private enum FollowMode { NEAREST, ITERATIVE }
+    private FollowMode followMode = FollowMode.ITERATIVE;
+
+    private boolean isSequence = false;
     private List<Waypoint> waypoints = new ArrayList<>();
-
     private Waypoint currentWaypoint;
 
-    public static Sequencer getInstance() {
+    public static FlyManager getInstance() {
         if (instance == null)
-            instance = (Sequencer) load(Sequencer.class, DEFAULT_FILE_PATH);
+            instance = (FlyManager) load(FlyManager.class, DEFAULT_FILE_PATH);
 
         return instance;
     }
 
+    public void update() {
+        stateMachine.update();
+    }
+
     public void loadSequence(String filePath) {
-        Object result = null;
         try {
             waypoints = (List<Waypoint>) Utils.load(new TypeToken<List<Waypoint>>(){}.getType(), filePath);
             ChatCommands.sendPrivateMessage(new LiteralText("Waypoint sequence loaded!"));
@@ -68,11 +76,35 @@ public class Sequencer extends PersistentResource {
         }
     }
 
+    public Waypoint getCurrentWaypoint() {
+        return currentWaypoint;
+    }
+
+    public boolean hasCurrentWaypoint() {
+        return currentWaypoint != null;
+    }
+
+    public boolean isLastWaypoint() {
+        if (!isSequence) return false;
+        return waypoints.size() <= 1;
+    }
+
+    public void completeCurrentWaypoint() {
+        if (isSequence) {
+            waypoints.remove(currentWaypoint);
+        }
+
+        ChatCommands.sendPrivateMessage(new LiteralText(String.format("Waypoint reached: %s", currentWaypoint)));
+        currentWaypoint = null;
+    }
+
     public void fly() {
 
     }
 
     public void fly(Waypoint waypoint) {
         currentWaypoint = waypoint;
+        isSequence = false;
+        stateMachine.setState(FlyState.LIFT_OFF);
     }
 }

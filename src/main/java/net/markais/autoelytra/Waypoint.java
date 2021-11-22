@@ -15,9 +15,9 @@ public class Waypoint {
         this(x, z, null);
     }
 
-    public double squaredDistance(int x, int z) {
-        int dx = this.x - x;
-        int dz = this.z - z;
+    public double squaredDistance(double x, double z) {
+        double dx = this.x - x;
+        double dz = this.z - z;
 
         return dx*dx + dz*dz;
     }

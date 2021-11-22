@@ -51,7 +51,7 @@ public class ChatCommands {
                             .executes(context -> {
                                 int x = context.getArgument("x", Integer.class);
                                 int z = context.getArgument("z", Integer.class);
-                                // TODO
+                                FlyManager.getInstance().fly(new Waypoint(x, z));
                                 return 1;
                             })
                         )
@@ -106,7 +106,7 @@ public class ChatCommands {
                     )
                 ).then(literal("sequence")
                     .executes(context -> {
-                        Sequencer.getInstance().listWaypoints();
+                        FlyManager.getInstance().listWaypoints();
                         return 1;
                     }).then(literal("add")
                         .then(argument("x", IntegerArgumentType.integer())
@@ -114,14 +114,14 @@ public class ChatCommands {
                                 .executes(context -> {
                                     int x = context.getArgument("x", Integer.class);
                                     int z = context.getArgument("z", Integer.class);
-                                    Sequencer.getInstance().addWaypoint(new Waypoint(x, z));
+                                    FlyManager.getInstance().addWaypoint(new Waypoint(x, z));
                                     return 1;
                                 })
                             )
                         ).then(argument("name", StringArgumentType.string())
                             .executes(context -> {
                                 String name = context.getArgument("name", String.class);
-                                Sequencer.getInstance().addWaypoint(name);
+                                FlyManager.getInstance().addWaypoint(name);
                                 return 1;
                             })
                         )
@@ -129,13 +129,13 @@ public class ChatCommands {
                         .then(argument("filename", StringArgumentType.string())
                             .executes(context -> {
                                 String filename = context.getArgument("filename", String.class);
-                                Sequencer.getInstance().loadSequence(filename);
+                                FlyManager.getInstance().loadSequence(filename);
                                 return 1;
                             })
                         )
                     ).then(literal("clear")
                         .executes(context -> {
-                            Sequencer.getInstance().clearSequence();
+                            FlyManager.getInstance().clearSequence();
                             return 1;
                         })
                     ).then(literal("start")
