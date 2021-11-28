@@ -16,6 +16,9 @@ public class FlyManager extends PersistentResource {
     private enum FollowMode { NEAREST, ITERATIVE }
     private FollowMode followMode = FollowMode.ITERATIVE;
 
+    private enum ActiveState { STOPPED, PAUSED, ACTIVE }
+    private ActiveState activeState = ActiveState.STOPPED;
+
     private boolean isSequence = false;
     private List<Waypoint> waypoints = new ArrayList<>();
     private Waypoint currentWaypoint;
@@ -25,10 +28,6 @@ public class FlyManager extends PersistentResource {
             instance = (FlyManager) load(FlyManager.class, DEFAULT_FILE_PATH);
 
         return instance;
-    }
-
-    public void update() {
-        stateMachine.update();
     }
 
     public void loadSequence(String filePath) {
@@ -76,12 +75,23 @@ public class FlyManager extends PersistentResource {
         }
     }
 
+    private Waypoint selectNextWaypoint() {
+//        switch (followMode) {
+//            case ITERATIVE: return waypoints.get(0);
+//            case NEAREST: return waypoints.stream().sorted((a, b) -> {return 1;}).
+//        };
+        return null;
+    }
+
     public Waypoint getCurrentWaypoint() {
+        if (isSequence && currentWaypoint == null)
+            currentWaypoint = selectNextWaypoint();
+
         return currentWaypoint;
     }
 
     public boolean hasCurrentWaypoint() {
-        return currentWaypoint != null;
+        return getCurrentWaypoint() != null;
     }
 
     public boolean isLastWaypoint() {
@@ -89,22 +99,66 @@ public class FlyManager extends PersistentResource {
         return waypoints.size() <= 1;
     }
 
-    public void completeCurrentWaypoint() {
+    public void completeCurrentWaypoint(boolean success) {
         if (isSequence) {
             waypoints.remove(currentWaypoint);
         }
 
-        ChatCommands.sendPrivateMessage(new LiteralText(String.format("Waypoint reached: %s", currentWaypoint)));
+        if (success) ChatCommands.sendPrivateMessage(new LiteralText(String.format("Waypoint reached: %s", currentWaypoint)));
+        else ChatCommands.sendPrivateMessage(new LiteralText(String.format("Flight canceled to: %s", currentWaypoint)));
         currentWaypoint = null;
     }
 
-    public void fly() {
-
+    public void fly(String name) {
+        Waypoint waypoint = WaypointLibrary.getInstance().getWaypoint(name);
+        fly(waypoint);
     }
 
     public void fly(Waypoint waypoint) {
+        if (waypoint == null) return;
+
         currentWaypoint = waypoint;
         isSequence = false;
         stateMachine.setState(FlyState.LIFT_OFF);
+    }
+
+    public void flySequence() {
+        currentWaypoint = null;
+        isSequence = true;
+        stateMachine.setState(FlyState.LIFT_OFF);
+    }
+
+    public void update() {
+        if (activeState == ActiveState.ACTIVE)
+            stateMachine.update();
+    }
+
+    public void pause() {
+        if (activeState != ActiveState.ACTIVE) {
+            ChatCommands.sendPrivateMessage(new LiteralText("No flight to be paused."));
+            return;
+        }
+
+        activeState = ActiveState.PAUSED;
+    }
+
+    public void stop() {
+        if (activeState == ActiveState.STOPPED) {
+            ChatCommands.sendPrivateMessage(new LiteralText("No flight to be stopped."));
+            return;
+        }
+
+        completeCurrentWaypoint(false);
+        activeState = ActiveState.STOPPED;
+    }
+
+    public void resume() {
+        if (activeState != ActiveState.PAUSED) {
+            ChatCommands.sendPrivateMessage(new LiteralText("No flight has been paused."));
+            return;
+        }
+
+        activeState = ActiveState.ACTIVE;
+        ChatCommands.sendPrivateMessage(new LiteralText(String.format("Flight resumed: %s", currentWaypoint)));
     }
 }

@@ -151,7 +151,7 @@ public enum FlyState implements State {
             var config = AutoFlyConfig.getInstance(); // TODO: fix hardcoded
 
             if (PlayerController.isGrounded()) {
-                FlyManager.getInstance().completeCurrentWaypoint();
+                FlyManager.getInstance().completeCurrentWaypoint(true);
                 stateMachine.setState(FlyState.IDLE);
                 return;
             }
@@ -251,11 +251,11 @@ public enum FlyState implements State {
 
             if (config.shouldDisconnect(last)) {
                 PlayerController.disconnect("Arrived at goal! " + getFormattedPosition());
-                sequencer.completeCurrentWaypoint();
+                sequencer.completeCurrentWaypoint(true);
             } else if (config.shouldLand(last)) {
                 stateMachine.setState(FlyState.LANDING);
             } else {
-                sequencer.completeCurrentWaypoint();
+                sequencer.completeCurrentWaypoint(true);
 
                 if (last)
                     stateMachine.setState(FlyState.IDLE);

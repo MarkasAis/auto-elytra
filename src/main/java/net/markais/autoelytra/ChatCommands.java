@@ -58,23 +58,23 @@ public class ChatCommands {
                     ).then(argument("name", StringArgumentType.string())
                         .executes(context -> {
                             String name = context.getArgument("name", String.class);
-                            // TODO
+                            FlyManager.getInstance().fly(name);
                             return 1;
                         })
                     )
                 ).then(literal("stop")
                     .executes(context -> {
-                        // TODO
+                        FlyManager.getInstance().stop();
                         return 1;
                     })
                 ).then(literal("pause")
                     .executes(context -> {
-                        // TODO
+                        FlyManager.getInstance().pause();
                         return 1;
                     })
                 ).then(literal("resume")
                     .executes(context -> {
-                        // TODO
+                        FlyManager.getInstance().resume();
                         return 1;
                     })
                 ).then(literal("waypoints")
@@ -140,7 +140,7 @@ public class ChatCommands {
                         })
                     ).then(literal("start")
                         .executes(context -> {
-                            // TODO
+                            FlyManager.getInstance().flySequence();
                             return 1;
                         })
                     )
