@@ -6,18 +6,16 @@ import net.minecraft.text.LiteralText;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FlyManager extends PersistentResource {
     private transient static final String DEFAULT_FILE_PATH = "sequencer.json";
     private transient static FlyManager instance;
 
-    private StateMachine stateMachine = new StateMachine(FlyState.IDLE);
+    private transient final StateMachine stateMachine = new StateMachine(FlyState.IDLE);
 
-    private enum FollowMode { NEAREST, ITERATIVE }
-    private FollowMode followMode = FollowMode.ITERATIVE;
-
-    private enum ActiveState { STOPPED, PAUSED, ACTIVE }
-    private ActiveState activeState = ActiveState.STOPPED;
+//    private enum ActiveState { STOPPED, PAUSED, ACTIVE }
+//    private ActiveState activeState = ActiveState.STOPPED;
 
     private boolean isSequence = false;
     private List<Waypoint> waypoints = new ArrayList<>();
@@ -34,6 +32,7 @@ public class FlyManager extends PersistentResource {
         try {
             waypoints = (List<Waypoint>) Utils.load(new TypeToken<List<Waypoint>>(){}.getType(), filePath);
             ChatCommands.sendPrivateMessage(new LiteralText("Waypoint sequence loaded!"));
+            save();
         } catch (IOException e) {
             ChatCommands.sendPrivateMessage(new LiteralText("Waypoint sequence could not be loaded!"));
         }
@@ -51,11 +50,13 @@ public class FlyManager extends PersistentResource {
     public void clearSequence() {
         waypoints = new ArrayList<>();
         ChatCommands.sendPrivateMessage(new LiteralText("Waypoint sequence cleared!"));
+        save();
     }
 
     public void addWaypoint(Waypoint waypoint) {
         waypoints.add(waypoint);
         ChatCommands.sendPrivateMessage(new LiteralText("Waypoint added!"));
+        save();
     }
 
     public void addWaypoint(String name) {
@@ -76,18 +77,30 @@ public class FlyManager extends PersistentResource {
     }
 
     private Waypoint selectNextWaypoint() {
-//        switch (followMode) {
-//            case ITERATIVE: return waypoints.get(0);
-//            case NEAREST: return waypoints.stream().sorted((a, b) -> {return 1;}).
-//        };
-        return null;
+        if (waypoints.isEmpty()) return null;
+
+        return switch (AutoFlyConfig.getInstance().getFollowMode()) {
+            case ITERATIVE -> waypoints.get(0);
+            case NEAREST -> waypoints.stream().min((a, b) -> {
+                double x = PlayerController.getX();
+                double z = PlayerController.getZ();
+                return (int) Math.signum(a.squaredDistance(x, z) - b.squaredDistance(x, z));
+            }).orElse(null);
+        };
     }
 
     public Waypoint getCurrentWaypoint() {
-        if (isSequence && currentWaypoint == null)
-            currentWaypoint = selectNextWaypoint();
+        if (currentWaypoint == null)
+            recalculateCurrentWaypoint();
 
         return currentWaypoint;
+    }
+
+    public void recalculateCurrentWaypoint() {
+        if (isSequence) currentWaypoint = selectNextWaypoint();
+        save();
+
+        printCurrentWaypoint();
     }
 
     public boolean hasCurrentWaypoint() {
@@ -95,7 +108,7 @@ public class FlyManager extends PersistentResource {
     }
 
     public boolean isLastWaypoint() {
-        if (!isSequence) return false;
+        if (!isSequence) return true;
         return waypoints.size() <= 1;
     }
 
@@ -109,6 +122,10 @@ public class FlyManager extends PersistentResource {
         currentWaypoint = null;
     }
 
+    public void printCurrentWaypoint() {
+        ChatCommands.sendPrivateMessage(new LiteralText(String.format("Current Waypoint: %s", getCurrentWaypoint())));
+    }
+
     public void fly(String name) {
         Waypoint waypoint = WaypointLibrary.getInstance().getWaypoint(name);
         fly(waypoint);
@@ -120,6 +137,8 @@ public class FlyManager extends PersistentResource {
         currentWaypoint = waypoint;
         isSequence = false;
         stateMachine.setState(FlyState.LIFT_OFF);
+
+        printCurrentWaypoint();
     }
 
     public void flySequence() {
@@ -129,36 +148,35 @@ public class FlyManager extends PersistentResource {
     }
 
     public void update() {
-        if (activeState == ActiveState.ACTIVE)
-            stateMachine.update();
+        stateMachine.update();
     }
 
     public void pause() {
-        if (activeState != ActiveState.ACTIVE) {
+        if (stateMachine.getState() == FlyState.IDLE) {
             ChatCommands.sendPrivateMessage(new LiteralText("No flight to be paused."));
             return;
         }
 
-        activeState = ActiveState.PAUSED;
+        stateMachine.setState(FlyState.IDLE);
     }
 
-    public void stop() {
-        if (activeState == ActiveState.STOPPED) {
-            ChatCommands.sendPrivateMessage(new LiteralText("No flight to be stopped."));
+    public void cancel() {
+        if (stateMachine.getState() == FlyState.IDLE) {
+            ChatCommands.sendPrivateMessage(new LiteralText("No active flight to be canceled."));
             return;
         }
 
         completeCurrentWaypoint(false);
-        activeState = ActiveState.STOPPED;
+        stateMachine.setState(FlyState.IDLE);
     }
 
     public void resume() {
-        if (activeState != ActiveState.PAUSED) {
+        if (stateMachine.getState() != FlyState.IDLE || getCurrentWaypoint() == null) {
             ChatCommands.sendPrivateMessage(new LiteralText("No flight has been paused."));
             return;
         }
 
-        activeState = ActiveState.ACTIVE;
+        stateMachine.setState(FlyState.LIFT_OFF);
         ChatCommands.sendPrivateMessage(new LiteralText(String.format("Flight resumed: %s", currentWaypoint)));
     }
 }

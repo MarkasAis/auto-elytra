@@ -1,7 +1,6 @@
 package net.markais.autoelytra;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 
 public abstract class PersistentResource {
 

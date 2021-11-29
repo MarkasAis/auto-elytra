@@ -62,9 +62,9 @@ public class ChatCommands {
                             return 1;
                         })
                     )
-                ).then(literal("stop")
+                ).then(literal("cancel")
                     .executes(context -> {
-                        FlyManager.getInstance().stop();
+                        FlyManager.getInstance().cancel();
                         return 1;
                     })
                 ).then(literal("pause")
@@ -149,19 +149,19 @@ public class ChatCommands {
                         .then(literal("never")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Landing mode: NEVER"));
-                                // TODO
+                                AutoFlyConfig.getInstance().setLandingMode(InteractionMode.NEVER);
                                 return 1;
                             })
                         ).then(literal("always")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Landing mode: ALWAYS"));
-                                // TODO
+                                AutoFlyConfig.getInstance().setLandingMode(InteractionMode.ALWAYS);
                                 return 1;
                             })
                         ).then(literal("last")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Landing mode: LAST"));
-                                // TODO
+                                AutoFlyConfig.getInstance().setLandingMode(InteractionMode.LAST);
                                 return 1;
                             })
                         )
@@ -169,19 +169,19 @@ public class ChatCommands {
                         .then(literal("never")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Disconnect mode: NEVER"));
-                                // TODO
+                                AutoFlyConfig.getInstance().setDisconnectMode(InteractionMode.NEVER);
                                 return 1;
                             })
                         ).then(literal("always")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Disconnect mode: ALWAYS"));
-                                // TODO
+                                AutoFlyConfig.getInstance().setDisconnectMode(InteractionMode.ALWAYS);
                                 return 1;
                             })
                         ).then(literal("last")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Disconnect mode: LAST"));
-                                // TODO
+                                AutoFlyConfig.getInstance().setDisconnectMode(InteractionMode.LAST);
                                 return 1;
                             })
                         )
@@ -189,17 +189,22 @@ public class ChatCommands {
                         .then(literal("nearest")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Fly order: NEAREST"));
-                                // TODO
+                                AutoFlyConfig.getInstance().setFollowMode(FollowMode.NEAREST);
                                 return 1;
                             })
                         ).then(literal("iterative")
                             .executes(context -> {
                                 sendPrivateMessage(new LiteralText("Fly order: ITERATIVE"));
-                                // TODO
+                                AutoFlyConfig.getInstance().setFollowMode(FollowMode.ITERATIVE);
                                 return 1;
                             })
                         )
                     )
+                ).then(literal("current")
+                    .executes(context -> {
+                        FlyManager.getInstance().printCurrentWaypoint();
+                        return 1;
+                    })
                 )
             );
 

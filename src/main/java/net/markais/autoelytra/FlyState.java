@@ -1,5 +1,6 @@
 package net.markais.autoelytra;
 
+import net.minecraft.text.LiteralText;
 import net.minecraft.util.math.Vec3d;
 
 public enum FlyState implements State {
@@ -7,11 +8,14 @@ public enum FlyState implements State {
 
         @Override
         public void onStateEnter(StateMachine stateMachine, State previousState) {
-            System.out.println("IDLE");
+            Utils.LOGGER.info("FlyState: IDLE");
         }
 
         @Override
-        public void onStateUpdate(StateMachine stateMachine) { }
+        public void onStateUpdate(StateMachine stateMachine) {
+//            if (FlyManager.getInstance().hasCurrentWaypoint())
+//                stateMachine.setState(FlyState.LIFT_OFF);
+        }
 
         @Override
         public void onStateExit(StateMachine stateMachine, State nextState) { }
@@ -21,7 +25,7 @@ public enum FlyState implements State {
 
         @Override
         public void onStateEnter(StateMachine stateMachine, State previousState) {
-            System.out.println("LIFT OFF");
+            Utils.LOGGER.info("FlyState: LIFT OFF");
 
             if (handleOutOfResources(stateMachine)) return;
 
@@ -52,7 +56,7 @@ public enum FlyState implements State {
 
         @Override
         public void onStateEnter(StateMachine stateMachine, State previousState) {
-            System.out.println("ASCENT TO SAFE ALTITUDE");
+            Utils.LOGGER.info("FlyState: ASCENT TO SAFE ALTITUDE");
             liftOff = (previousState == FlyState.LIFT_OFF);
         }
 
@@ -62,11 +66,8 @@ public enum FlyState implements State {
 
             handleElytra();
             if (handleWaypoint(stateMachine)) return;
-
-            if (!liftOff) {
-                if (handleCriticalAltitude(stateMachine)) return;
-                if (handleCollision(stateMachine)) return;
-            }
+            if (handleCollision(stateMachine, !liftOff, !liftOff)) return;
+            if (!liftOff && handleCriticalAltitude(stateMachine)) return;
 
             float ascentAngle = liftOff ? config.getLiftOffPitch() : config.getAscentPitch();
 
@@ -88,7 +89,7 @@ public enum FlyState implements State {
 
         @Override
         public void onStateEnter(StateMachine stateMachine, State previousState) {
-            System.out.println("ASCENT");
+            Utils.LOGGER.info("FlyState: ASCENT");
         }
 
         @Override
@@ -97,7 +98,7 @@ public enum FlyState implements State {
 
             handleElytra();
             if (handleWaypoint(stateMachine)) return;
-            if (handleCollision(stateMachine)) return;
+            if (handleCollision(stateMachine, true, true)) return;
             if (handleOutOfResources(stateMachine)) return;
             if (handleCriticalAltitude(stateMachine)) return;
 
@@ -113,10 +114,9 @@ public enum FlyState implements State {
     },
     DESCENT {
 
-
         @Override
         public void onStateEnter(StateMachine stateMachine, State previousState) {
-            System.out.println("DESCENT");
+            Utils.LOGGER.info("FlyState: DESCENT");
         }
 
         @Override
@@ -125,7 +125,7 @@ public enum FlyState implements State {
 
             handleElytra();
             if (handleWaypoint(stateMachine)) return;
-            if (handleCollision(stateMachine)) return;
+            if (handleCollision(stateMachine, true, true)) return;
             if (handleOutOfResources(stateMachine)) return;
             if (handleCriticalAltitude(stateMachine)) return;
 
@@ -143,13 +143,11 @@ public enum FlyState implements State {
 
         @Override
         public void onStateEnter(StateMachine stateMachine, State previousState) {
-            System.out.println("LANDING");
+            Utils.LOGGER.info("FlyState: LANDING");
         }
 
         @Override
         public void onStateUpdate(StateMachine stateMachine) {
-            var config = AutoFlyConfig.getInstance(); // TODO: fix hardcoded
-
             if (PlayerController.isGrounded()) {
                 FlyManager.getInstance().completeCurrentWaypoint(true);
                 stateMachine.setState(FlyState.IDLE);
@@ -157,9 +155,7 @@ public enum FlyState implements State {
             }
 
             yawTowardsWaypoint(90);
-
             handleElytra();
-
             PlayerController.pitchTowardsAngle(25, 10);
         }
 
@@ -187,21 +183,28 @@ public enum FlyState implements State {
     private static void handleElytra() {
         PlayerController.equipElytra();
 
-        if (!PlayerController.isFlying())
+        if (!PlayerController.isFlying()) {
+            if (PlayerController.isGrounded()) PlayerController.jump();
             PlayerController.activateElytra();
+        }
     }
 
     private static String getFormattedPosition() {
         Vec3d position = PlayerController.getPosition();
+        String x = Utils.formatDecimal(position.x);
+        String y = Utils.formatDecimal(position.y);
+        String z = Utils.formatDecimal(position.z);
 
-        return "(" + position.x + ", " + position.y + ", " + position.z + ")";
+        return String.format("(%s, %s, %s)", x, y, z);
     }
 
-    private static boolean handleCollision(StateMachine stateMachine) {
-        if (PlayerController.isColliding()) {
+    private static boolean handleCollision(StateMachine stateMachine, boolean checkGroundCollision, boolean disconnect) {
+        if (PlayerController.isColliding() && (checkGroundCollision || !PlayerController.isGrounded())) {
             stateMachine.setState(FlyState.IDLE);
 
-            PlayerController.disconnect("Collision! " + getFormattedPosition());
+            if (disconnect)
+                PlayerController.disconnect(String.format("Collision at: %s!", getFormattedPosition()));
+            else ChatCommands.sendPrivateMessage(new LiteralText("Collision detected, flight paused!"));
 
             return true;
         }
@@ -214,7 +217,7 @@ public enum FlyState implements State {
 
         if (PlayerController.getPosition().y <= config.getUnsafeAltitude()) {
             if (PlayerController.getPosition().y <= config.getCriticalAltitude()) {
-                PlayerController.disconnect("Critical altitude! " + getFormattedPosition());
+                PlayerController.disconnect("Critical altitude: %s!" + getFormattedPosition());
 
                 return true;
             }
@@ -250,15 +253,13 @@ public enum FlyState implements State {
             boolean last = sequencer.isLastWaypoint();
 
             if (config.shouldDisconnect(last)) {
-                PlayerController.disconnect("Arrived at goal! " + getFormattedPosition());
+                PlayerController.disconnect("AUTO-DISCONNECT at arrival: " + waypoint);
                 sequencer.completeCurrentWaypoint(true);
             } else if (config.shouldLand(last)) {
                 stateMachine.setState(FlyState.LANDING);
             } else {
                 sequencer.completeCurrentWaypoint(true);
-
-                if (last)
-                    stateMachine.setState(FlyState.IDLE);
+                if (last) stateMachine.setState(FlyState.IDLE);
             }
 
             return true;

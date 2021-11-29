@@ -1,8 +1,7 @@
 package net.markais.autoelytra;
 
-enum InteractionMode {
-    NEVER, ALWAYS, LAST
-};
+enum InteractionMode { NEVER, ALWAYS, LAST };
+enum FollowMode { NEAREST, ITERATIVE }
 
 public class AutoFlyConfig extends PersistentResource {
     private transient static final String DEFAULT_FILE_PATH = "auto_fly_config.json";
@@ -10,6 +9,8 @@ public class AutoFlyConfig extends PersistentResource {
 
     private InteractionMode landingMode = InteractionMode.LAST;
     private InteractionMode disconnectMode = InteractionMode.NEVER;
+
+    private FollowMode followMode = FollowMode.ITERATIVE;
 
     private int rocketSlot = 2;
     private int minRocketCount = 16;
@@ -27,6 +28,16 @@ public class AutoFlyConfig extends PersistentResource {
             instance = (AutoFlyConfig) load(AutoFlyConfig.class, DEFAULT_FILE_PATH);
 
         return instance;
+    }
+
+    public FollowMode getFollowMode() {
+        return this.followMode;
+    }
+
+    public void setFollowMode(FollowMode mode) {
+        this.followMode = mode;
+        save();
+        FlyManager.getInstance().recalculateCurrentWaypoint();
     }
 
     public InteractionMode getLandingMode() {

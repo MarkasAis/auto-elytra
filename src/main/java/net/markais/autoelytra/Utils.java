@@ -7,7 +7,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
@@ -15,6 +14,9 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 public class Utils {
     public static final Logger LOGGER = LogManager.getLogger("AutoElytra");
@@ -53,4 +55,7 @@ public class Utils {
             .resolve(name);
     }
 
+    public static String formatDecimal(double n) {
+        return new DecimalFormat("#.0", DecimalFormatSymbols.getInstance(Locale.ENGLISH)).format(n);
+    }
 }
