@@ -199,6 +199,70 @@ public class ChatCommands {
                                 return 1;
                             })
                         )
+                    ).then(literal("liftOffAltitude")
+                        .then(argument("y", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                int y = context.getArgument("y", Integer.class);
+                                AutoFlyConfig.getInstance().setLiftOffAltitude(y);
+                                return 1;
+                            })
+                        )
+                    ).then(literal("unsafeAltitude")
+                        .then(argument("y", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                int y = context.getArgument("y", Integer.class);
+                                AutoFlyConfig.getInstance().setUnsafeAltitude(y);
+                                return 1;
+                            })
+                        )
+                    ).then(literal("disconnectAltitude")
+                        .then(argument("y", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                int y = context.getArgument("y", Integer.class);
+                                AutoFlyConfig.getInstance().setDisconnectAltitude(y);
+                                return 1;
+                            })
+                        )
+                    ).then(literal("rocketSlot")
+                        .then(argument("slot", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                int slot = context.getArgument("slot", Integer.class);
+                                AutoFlyConfig.getInstance().setRocketSlot(slot);
+                                return 1;
+                            })
+                        )
+                    ).then(literal("minRocketCount")
+                        .then(argument("count", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                int count = context.getArgument("count", Integer.class);
+                                AutoFlyConfig.getInstance().setMinRocketCount(count);
+                                return 1;
+                            })
+                        )
+                    ).then(literal("elytraChangeDurability")
+                        .then(argument("durability", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                int durability = context.getArgument("durability", Integer.class);
+                                AutoFlyConfig.getInstance().setElytraChangeDurability(durability);
+                                return 1;
+                            })
+                        )
+                    ).then(literal("minElytraDurability")
+                        .then(argument("durability", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                int durability = context.getArgument("durability", Integer.class);
+                                AutoFlyConfig.getInstance().setMinElytraDurability(durability);
+                                return 1;
+                            })
+                        )
+                    ).then(literal("minElytraDurability")
+                        .then(argument("speed", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                int speed = context.getArgument("speed", Integer.class);
+                                AutoFlyConfig.getInstance().setYawSpeed(speed);
+                                return 1;
+                            })
+                        )
                     )
                 ).then(literal("current")
                     .executes(context -> {

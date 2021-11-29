@@ -77,7 +77,7 @@ public enum FlyState implements State {
                 }
             }
 
-            if (PlayerController.getPosition().y >= config.getSafeAltitude())
+            if (PlayerController.getPosition().y >= config.getLiftOffAltitude())
                 stateMachine.setState(FlyState.ASCENT);
         }
 
@@ -172,7 +172,8 @@ public enum FlyState implements State {
             stateMachine.setState(FlyState.IDLE);
 
             if (!PlayerController.isGrounded())
-                PlayerController.disconnect("Out of resources!");
+                PlayerController.disconnect("[AUTO-DISCONNECT] Out of resources!");
+            else ChatCommands.sendPrivateMessage(new LiteralText("Not enough resources, flight paused!"));
 
             return true;
         }
@@ -203,7 +204,7 @@ public enum FlyState implements State {
             stateMachine.setState(FlyState.IDLE);
 
             if (disconnect)
-                PlayerController.disconnect(String.format("Collision at: %s!", getFormattedPosition()));
+                PlayerController.disconnect(String.format("[AUTO-DISCONNECT] Collision at: %s!", getFormattedPosition()));
             else ChatCommands.sendPrivateMessage(new LiteralText("Collision detected, flight paused!"));
 
             return true;
@@ -216,8 +217,9 @@ public enum FlyState implements State {
         var config = AutoFlyConfig.getInstance();
 
         if (PlayerController.getPosition().y <= config.getUnsafeAltitude()) {
-            if (PlayerController.getPosition().y <= config.getCriticalAltitude()) {
-                PlayerController.disconnect("Critical altitude: %s!" + getFormattedPosition());
+            if (PlayerController.getPosition().y <= config.getDisconnectAltitude()) {
+                stateMachine.setState(FlyState.IDLE);
+                PlayerController.disconnect(String.format("[AUTO-DISCONNECT] Critical altitude: %s!", getFormattedPosition()));
 
                 return true;
             }
@@ -253,7 +255,7 @@ public enum FlyState implements State {
             boolean last = sequencer.isLastWaypoint();
 
             if (config.shouldDisconnect(last)) {
-                PlayerController.disconnect("AUTO-DISCONNECT at arrival: " + waypoint);
+                PlayerController.disconnect("[AUTO-DISCONNECT] at arrival: " + waypoint);
                 sequencer.completeCurrentWaypoint(true);
             } else if (config.shouldLand(last)) {
                 stateMachine.setState(FlyState.LANDING);
@@ -275,6 +277,6 @@ public enum FlyState implements State {
     }
 
     private static void yawTowardsWaypoint() {
-        yawTowardsWaypoint(10);
+        yawTowardsWaypoint(AutoFlyConfig.getInstance().getYawSpeed());
     }
 }
